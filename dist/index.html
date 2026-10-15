@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="12개 생존 물품의 우선순위를 정하고 개인과 모둠의 의사결정을 비교하세요. 기준 순위와의 오차 점수 계산, 근거 기록, 파일 저장을 지원합니다.">
+  <meta name="theme-color" content="#163e34"><title>Decision Rank Lab · 과학적 의사결정</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+  <script src="core.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#workspace">활동으로 바로 가기</a>
+<header class="header"><a class="brand" href="./" aria-label="Decision Rank Lab 홈"><span class="brand-mark" aria-hidden="true">≋</span><span>Decision Rank <b>Lab</b></span></a><nav aria-label="도움말"><a href="#guide">이용 가이드</a><a href="#faq">FAQ</a><button class="quiet" id="demo">예시 체험 ↗</button></nav></header>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div><p class="eyebrow">SCIENCE · DISCUSSION · DECISION</p><h1>과학적<br>의사결정<br><span>프로젝트</span></h1><p class="side-intro">나의 선택에서<br>우리의 합리적인 결정으로.</p></div>
+    <nav class="steps" aria-label="활동 단계">
+      <button data-view="personal" aria-pressed="true"><span class="step-num">01</span><span>개인 순위<small>먼저, 나의 판단</small></span><span class="step-check" id="check-personal">○</span></button>
+      <button data-view="group" aria-pressed="false"><span class="step-num">02</span><span>모둠 순위<small>근거를 나누고 함께 결정</small></span><span class="step-check" id="check-group">○</span></button>
+      <button data-view="results" aria-pressed="false"><span class="step-num">03</span><span>결과 비교<small>차이를 살펴보고 돌아보기</small></span></button>
+    </nav>
+    <button class="teacher-link" data-view="reference" aria-pressed="false">⚙ 기준 순위 설정 <span>교사용</span></button>
+    <div class="side-foot"><span class="dot"></span> 로그인 없이 바로 사용<p>입력 내용은 이 기기에서 처리됩니다.</p></div>
+  </aside>
+  <main id="workspace" tabindex="-1">
+    <div class="topline"><span id="stage-label">ACTIVITY 01 / 03</span><span class="local-label">● 브라우저에서 계산</span></div>
+    <div id="demo-banner" class="notice" hidden>체험용 임의 순위입니다. 실제 생존 정답이 아닙니다. <button id="exit-demo">새 활동 시작</button></div>
+    <details class="activity-settings"><summary>활동 정보 · 상황과 참여자 기록 <span>선택 사항</span></summary><div class="settings-grid"><label>활동 제목<input id="title" maxlength="120"></label><label>개인 별칭<input id="alias" maxlength="80" placeholder="예: 탐구자 A"></label><label>모둠 이름<input id="groupName" maxlength="80" placeholder="예: 1모둠"></label><label class="wide">교사가 제시한 상황<textarea id="scenario" rows="2" maxlength="5000" placeholder="장소, 기온, 구조 가능성 등 수업에서 제시한 조건을 적으세요."></textarea></label></div></details>
+    <section id="ranking-view" aria-labelledby="view-title">
+      <div class="section-heading"><div><p class="eyebrow" id="view-eyebrow">THINK FOR YOURSELF</p><h2 id="view-title">무엇이 가장 필요할까요?</h2><p id="view-description">생존에 중요하다고 생각하는 순서로 12개 물품을 배열하세요.</p></div><span class="count-label">12 <small>ITEMS</small></span></div>
+      <div class="rank-toolbar"><span><b>1위</b>가 가장 중요합니다 <span class="separator">/</span> 순위 선택 또는 ↑ ↓ 이동</span><button class="quiet" id="reset-order">이 순위 초기화</button></div>
+      <div id="reference-info" class="notice" hidden>기준은 교사가 수업 상황에 맞춰 정합니다. 인증된 전문가 답안은 제공하지 않습니다. 설정 화면은 보안을 위한 로그인 기능이 아닙니다.<label>기준 설명 / 출처<input id="referenceLabel" maxlength="500" placeholder="예: 수업에서 합의한 기준, 출처와 조건"></label></div>
+      <p class="status-line" id="order-status" role="status"></p>
+      <ol class="rank-list" id="rank-list" aria-label="생존 물품 순위"></ol>
+      <div class="action-bar"><p id="confirmation-hint">처음 배열은 활동지의 물품 목록 순서입니다.<br>검토한 뒤 순위를 확정하세요.</p><button class="primary" id="confirm-order">개인 순위 확정 <span>→</span></button></div>
+    </section>
+    <section id="results-view" hidden aria-labelledby="results-title"><div class="section-heading"><div><p class="eyebrow">REFLECT ON YOUR DECISION</p><h2 id="results-title">함께 결정한 뒤, 무엇이 달라졌나요?</h2><p>점수와 물품별 차이를 확인하고 판단의 근거를 돌아보세요.</p></div></div><div id="results-content"></div><label class="reflection-label">활동 후기<textarea id="reflection" maxlength="5000" rows="4" placeholder="어떤 근거로 순위를 바꿨나요? 의견이 달랐을 때 어떻게 결정했나요?"></textarea></label><div class="export-actions"><button id="csv-export" class="primary">결과 CSV 내려받기</button><button id="print" class="secondary">인쇄 / PDF 저장</button></div></section>
+    <section class="storage-panel" aria-labelledby="storage-title"><div><h3 id="storage-title">활동을 이어서 하려면</h3><label class="save-toggle"><input type="checkbox" id="persist"> 이 브라우저에 자동 저장</label><p id="save-status" role="status">자동 저장 꺼짐 · 탭을 닫기 전 파일을 내려받으세요.</p></div><div class="storage-actions"><button id="json-export" class="secondary">활동 파일 저장</button><label class="file-button secondary" for="json-import">활동 파일 열기<input type="file" id="json-import" accept=".json,application/json"></label><button id="clear" class="quiet danger">전체 초기화</button></div></section>
+    <p class="message" id="message" role="status" aria-live="polite"></p>
+    <noscript><p class="notice">순위 변경과 계산에는 JavaScript가 필요합니다. 브라우저 설정에서 JavaScript를 허용해주세요.</p></noscript>
+  </main>
+</div>
+<div class="help-wrap">
+<section id="guide" class="help-section"><p class="eyebrow">HOW TO USE</p><h2>이용 가이드</h2><div class="guide-grid"><article><span>01</span><h3>혼자 우선순위 정하기</h3><p>교사가 제시한 상황을 확인합니다. 12개 물품을 순위 선택 상자나 위·아래 버튼으로 이동하고, 필요하면 ‘판단 근거’를 기록합니다. ‘개인 순위 확정’을 누릅니다.</p></article><article><span>02</span><h3>모둠에서 근거 나누기</h3><p>모둠 순위는 개인 순위와 별도로 시작합니다. 서로의 판단을 듣고 합의한 순서를 확정하세요. 같은 기기에서 한 사람의 개인 판단과 모둠 판단을 비교합니다.</p></article><article><span>03</span><h3>기준과 비교하고 성찰하기</h3><p>교사가 ‘기준 순위 설정’에서 순서와 출처를 입력하고 확정합니다. 결과 화면에서 오차를 확인하고 후기를 남깁니다. 활동 JSON은 이어 하기용, CSV는 결과 확인용입니다.</p></article></div><details><summary>키보드와 모바일 사용법</summary><p>Tab / Shift+Tab으로 컨트롤을 이동하고 Enter / Space로 버튼을 실행하세요. 순위 선택 상자는 방향키로 조작할 수 있습니다. ↑·↓ 버튼으로도 한 칸씩 옮길 수 있으므로 드래그가 필요하지 않습니다. 모바일에서는 순위 선택이나 이동 버튼을 터치하세요.</p></details><details><summary>점수 계산식과 해석</summary><p>물품별 오차 = |입력 순위 − 기준 순위|. 오차 점수는 12개 오차의 합으로, 0점에 가까울수록 입력한 기준과 비슷합니다. 12개 물품의 최대 오차 합계는 72점입니다. 보조 지표인 환산 점수 = (1 − 오차 합계 / 72) × 100, 소수 첫째 자리로 반올림합니다. 모둠 개선량 = 개인 오차 − 모둠 오차이며 양수일 때 기준에 더 가까워졌다는 뜻입니다. 점수는 생존 확률이나 사고력의 객관적 측정값이 아닙니다.</p></details></section>
+<section id="faq" class="help-section"><p class="eyebrow">QUESTIONS & ANSWERS</p><h2>자주 묻는 질문</h2><details><summary>왜 정답이 미리 들어 있지 않나요?</summary><p>제공된 활동지에는 물품 목록과 개인·모둠 순위 및 오차 기록란이 있으며, 기준 순위나 생존 상황은 명시되어 있지 않습니다. 상황에 따라 우선순위가 달라질 수 있으므로 교사가 기준과 조건을 직접 입력합니다. ‘예시 체험’의 값은 조작과 계산을 살펴보기 위한 임의 데이터입니다.</p></details><details><summary>기준을 입력하기 전에도 활동할 수 있나요?</summary><p>네. 개인·모둠 순위와 근거를 먼저 기록할 수 있습니다. 기준을 확정하기 전에는 오차 점수를 표시하지 않습니다. 개인 또는 모둠 순위를 수정하면 해당 확정이 풀리므로 다시 확정해야 새 점수가 나옵니다.</p></details><details><summary>다른 기기나 모둠과 실시간으로 연결되나요?</summary><p>실시간 공동 편집이나 학급 전체 수집 기능은 없습니다. 이어서 사용하려면 활동 파일(JSON)을 내려받아 다른 기기에서 열어주세요. 파일을 열면 현재 활동이 교체되므로 먼저 기존 활동을 저장하세요. 파일에는 기준 순위와 근거, 후기도 포함됩니다.</p></details><details><summary>입력한 내용이 사라졌어요.</summary><p>자동 저장을 켜지 않았다면 새로고침이나 탭 종료로 내용이 사라집니다. 저장을 켜도 시크릿 모드 종료, 브라우저 데이터 삭제 또는 다른 주소로 접속하면 복원되지 않을 수 있습니다. 중요한 기록은 활동 파일로 보관하세요. 공유 기기에서는 사용 후 ‘전체 초기화’를 누르세요.</p></details><details><summary>교사용 기준은 학생에게 비공개인가요?</summary><p>아니요. ‘교사용’은 사용 목적을 나타냅니다. 별도 인증이나 답안 보호 기능은 없으며, 기준 설정과 내보낸 JSON 파일에서 확인할 수 있습니다. 채점 기준을 숨겨야 하는 수업에서는 토론이 끝난 뒤 입력하세요.</p></details></section>
+<section id="about" class="help-section about-grid"><div><p class="eyebrow">ABOUT THE LAB</p><h2>선택의 근거를<br>함께 살펴보는 도구</h2></div><div><p>Decision Rank Lab은 ‘과학적 의사결정 프로젝트’ 활동지의 12개 생존 물품을 바탕으로 만든 수업용 웹 도구입니다. 개인의 판단, 모둠의 합의, 교사가 정한 기준을 비교해 토론과 성찰을 돕습니다.</p><p>공식 재난 대응 지침이나 전문가 생존 답안을 제공하지 않습니다. 수업 상황과 과학적 근거는 진행자가 제시하고 검토해야 합니다.</p><a href="https://github.com/HG0395/decision-rank-lab" target="_blank" rel="noopener noreferrer">소스 코드 보기 ↗</a> <a href="https://github.com/HG0395/decision-rank-lab/issues" target="_blank" rel="noopener noreferrer">문의 · 오류 신고 ↗</a><p class="small">문의는 GitHub Issues에서 받으며 작성에는 GitHub 로그인이 필요합니다. 공개 게시판이므로 학생의 이름이나 활동 파일 등 개인정보를 올리지 마세요.</p></div></section>
+<section id="privacy" class="help-section"><p class="eyebrow">YOUR DATA</p><h2>데이터 사용 안내</h2><p>순위, 별칭, 모둠 이름, 상황, 판단 근거와 후기는 브라우저에서만 처리됩니다. 앱에는 입력 데이터를 서버로 보내는 기능, 계정 생성, 광고, 방문 분석 도구가 없습니다. 웹사이트 파일 제공 과정에서는 호스팅 제공자 Cloudflare가 IP 주소 등의 접속 정보를 처리할 수 있습니다. 자세한 내용은 <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare 개인정보 처리방침</a>을 확인하세요.</p><p>‘이 브라우저에 자동 저장’을 켜면 활동 전체를 이 사이트 주소의 localStorage에 저장합니다. 체크를 해제하면 저장본은 삭제되고 현재 탭의 작업만 유지됩니다. ‘전체 초기화’는 이 도구의 저장본과 현재 입력을 삭제합니다. 다운로드한 JSON·CSV와 인쇄/PDF 파일은 사용자가 관리하며 초기화로 삭제되지 않습니다. 학생의 실명 등 민감한 내용 대신 별칭을 사용하세요.</p></section>
+</div>
+<footer><a class="brand" href="./">Decision Rank <b>Lab</b></a><span>판단하고, 토론하고, 돌아보기.</span><nav aria-label="사이트 정보"><a href="#about">사이트 소개</a><a href="#privacy">데이터 사용 안내</a><a href="https://github.com/HG0395/decision-rank-lab/issues" target="_blank" rel="noopener noreferrer">문의</a></nav></footer>
+<dialog id="confirm-dialog" aria-labelledby="dialog-title"><h2 id="dialog-title">현재 활동을 바꿀까요?</h2><p id="dialog-description"></p><div><button id="dialog-cancel" class="secondary">취소</button><button id="dialog-ok" class="primary">계속</button></div></dialog>
+</body></html>

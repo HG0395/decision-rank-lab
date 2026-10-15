@@ -1,0 +1,8 @@
+{
+  "name": "decision-rank-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scientific decision-making ranking and scoring classroom tool",
+  "scripts": {"test": "node --test tests/core.test.cjs", "build": "node --test tests/core.test.cjs", "dev": "node server.cjs"},
+  "engines": {"node": ">=22"}
+}
