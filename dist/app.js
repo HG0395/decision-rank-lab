@@ -71,7 +71,7 @@
   $('confirm-dialog').addEventListener('cancel', () => { pending = null; });
   $('reset-order').addEventListener('click', () => confirmAction(`${labels[view]} 순위를 활동지 목록 순서로 되돌립니다. 기록한 근거는 유지됩니다.`, () => {state[view] = C.identity(); state.confirmed[view] = false; persist(); renderRanking(); message('현재 단계의 순위를 초기화했습니다.');}));
   function clearActivity() {
-    const removed = removeStored(); state = C.fresh(); $('persist').checked = false; syncFields(); changeView('personal', true);
+    const removed = removeStored(); state = C.fresh(); $('persist').checked = false; $('results-content').replaceChildren(); syncFields(); changeView('personal', true);
     $('save-status').textContent = removed ? '자동 저장 꺼짐 · 탭을 닫기 전 파일을 내려받으세요.' : '브라우저 저장본 삭제 실패 · 사이트 데이터를 직접 삭제하세요.';
     message('새 활동을 시작했습니다. 다운로드한 파일은 별도로 관리하세요.');
   }
@@ -117,6 +117,7 @@
     const rows = [['활동',state.title],['별칭',state.alias],['모둠',state.groupName],['상황',state.scenario],['기준 설명',state.referenceLabel],['체험 데이터',state.demo ? '예 · 실제 생존 답안 아님' : '아니오'],[],['물품','개인 순위','모둠 순위','기준 순위','개인 오차','모둠 오차','개인 근거','모둠 근거'], ...C.ITEMS.map((name,id) => [name,p ? pr[id] : '',g ? gr[id] : '',rr[id],p?.errors[id] ?? '',g?.errors[id] ?? '',state.notes.personal[id],state.notes.group[id]]),['오차 합계','','','',p?.total ?? '',g?.total ?? ''],['환산 점수 (100점)','','','',p?.normalized ?? '',g?.normalized ?? ''],['모둠 개선량',p && g ? p.total-g.total : ''],['활동 후기',state.reflection]];
     download('의사결정_비교결과.csv','\ufeff'+rows.map(r=>r.map(C.csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8'); message('비교 결과를 CSV로 내려받았습니다.');
   });
+  window.addEventListener('beforeprint', renderResults);
   $('print').addEventListener('click', () => window.print());
   try { const saved = localStorage.getItem(KEY); if (saved) {state = C.validate(JSON.parse(saved)); $('persist').checked = true; $('save-status').textContent = '이 브라우저에 저장된 활동을 복원했습니다.';} }
   catch { message('저장된 활동을 복원하지 못했습니다. 필요한 경우 활동 파일을 열어주세요.'); }
