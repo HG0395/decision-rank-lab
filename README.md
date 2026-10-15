@@ -1,5 +1,7 @@
 # Decision Rank Lab
 
+공개 사이트: https://decision-rank-lab.pages.dev/
+
 과학적 의사결정 수업의 12개 생존 물품에 대해 개인·모둠 순위를 정하고 교사가 입력한 기준과 비교하는 한국어 웹 도구입니다.
 
 ## 기능
@@ -41,3 +43,4 @@ Node.js 22 이상에서 `npm test`, `npm run dev`를 실행하고 http://127.0.0
 입력은 브라우저에서 처리됩니다. 자동 저장은 기본 꺼짐이며 선택 시 localStorage에 저장합니다. 실시간 공동 편집, 학급 수집, 교사 인증, 기준 답안 접근 제어는 없습니다. JSON에는 기준 순위도 포함됩니다. 공개 Issues에 개인정보나 학생 활동 파일을 올리지 마세요. 입력 데이터는 GitHub 저장소에 업로드하지 않습니다.
 
 문의·오류 신고: https://github.com/HG0395/decision-rank-lab/issues
+

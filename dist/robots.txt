@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://decision-rank-lab.pages.dev/sitemap.xml
