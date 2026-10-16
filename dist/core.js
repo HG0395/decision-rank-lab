@@ -39,8 +39,13 @@
   }
   function band(total) {
     if (!Number.isInteger(total) || total < 0 || total > 72 || total % 2 !== 0) throw new Error('오차 합계가 올바르지 않습니다.');
-    const bands = [{max:12,grade:'S',range:'0~12',label:'기준에 매우 가까움'},{max:26,grade:'A',range:'14~26',label:'기준에 가까움'},{max:42,grade:'B',range:'28~42',label:'차이가 있는 물품 검토'},{max:56,grade:'C',range:'44~56',label:'판단 근거 다시 비교'},{max:72,grade:'D',range:'58~72',label:'기준과 큰 차이'}];
+    const bands = [{max:12,grade:'S',range:'0~12',label:'기준에 매우 가까움',survival:'99% 이상'},{max:26,grade:'A',range:'14~26',label:'기준에 가까움',survival:'80~90%'},{max:42,grade:'B',range:'28~42',label:'차이가 있는 물품 검토',survival:'40~60%'},{max:56,grade:'C',range:'44~56',label:'판단 근거 다시 비교',survival:'10~20%'},{max:72,grade:'D',range:'58~72',label:'기준과 큰 차이',survival:'0%'}];
     return bands.find(b => total <= b.max);
+  }
+  function compare(personal, group) {
+    const p = score(personal), g = score(group), pr = ranks(personal), gr = ranks(group);
+    const changes = p.errors.map((error,id) => error - g.errors[id]);
+    return {gain:p.total-g.total, changes, improved:changes.filter(v=>v>0).length, worsened:changes.filter(v=>v<0).length, equal:changes.filter(v=>v===0).length, changedRanks:pr.filter((v,id)=>v!==gr[id]).length};
   }
   const fresh = () => ({version: 2, lessonId: 'earthquake-classroom-v1', title: '과학적 의사결정 프로젝트', scenario: SCENARIO, activityNotes: '', alias: '', groupName: '', personal: shuffled(), group: shuffled(), reference: [...REFERENCE], confirmed: {personal: false, group: false, reference: true}, notes: {personal: Array(12).fill(''), group: Array(12).fill('')}, reflection: '', referenceLabel: REFERENCE_LABEL, demo: false});
   function validate(data) {
@@ -70,6 +75,6 @@
     if (/^[\s]*[=+\-@\t\r]/.test(s)) s = "'" + s;
     return '"' + s.replace(/"/g, '""') + '"';
   }
-  root.RankCore = {ITEMS, REFERENCE, REFERENCE_LABEL, SCENARIO, RATIONALE, identity, shuffled, validOrder, ranks, score, band, move, fresh, validate, csvCell};
+  root.RankCore = {ITEMS, REFERENCE, REFERENCE_LABEL, SCENARIO, RATIONALE, identity, shuffled, validOrder, ranks, score, band, compare, move, fresh, validate, csvCell};
   if (typeof module !== 'undefined') module.exports = root.RankCore;
 })(globalThis);

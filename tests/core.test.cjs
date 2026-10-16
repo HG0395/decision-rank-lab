@@ -81,3 +81,16 @@ test('classroom bands follow PPT slide 7 and reject impossible odd totals', () =
   for (const [total,grade] of [[0,'S'],[12,'S'],[14,'A'],[26,'A'],[28,'B'],[42,'B'],[44,'C'],[56,'C'],[58,'D'],[72,'D']]) assert.equal(C.band(total).grade,grade);
   for(const total of [-2,13,73,NaN]) assert.throws(()=>C.band(total));
 });
+
+test('discussion comparison distinguishes improvement, regression and equal totals with changed ranks', () => {
+  const forward=C.identity(), backward=C.identity().reverse();
+  const better=C.compare(backward,forward), worse=C.compare(forward,backward);
+  assert.equal(better.gain,72); assert.equal(better.improved,12); assert.equal(better.worsened,0);
+  assert.equal(worse.gain,-72); assert.equal(worse.worsened,12);
+  const same=C.compare(forward,forward);
+  assert.equal(same.gain,0); assert.equal(same.changedRanks,0);
+  const different=C.compare(C.move(forward,0,1),C.move(forward,2,3));
+  assert.equal(different.gain,0); assert.equal(different.changedRanks,4);
+  assert.equal(different.improved,2); assert.equal(different.worsened,2);
+  assert.equal(different.changes.reduce((a,b)=>a+b,0),different.gain);
+});

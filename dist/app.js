@@ -18,14 +18,14 @@
   function changeView(next, focus = false) {
     view = next;
     document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.view === view)));
-    $('ranking-view').hidden = !['personal','group'].includes(view); $('results-view').hidden = view !== 'results'; $('reference-view').hidden = view !== 'reference';
-    $('stage-label').textContent = view === 'reference' ? 'CLASS REFERENCE / FIXED' : `ACTIVITY ${view === 'personal' ? '01' : view === 'group' ? '02' : '03'} / 03`;
-    if (view === 'results') renderResults(); else if (view === 'reference') renderReference(); else renderRanking();
+    $('ranking-layout').hidden = view === 'results'; $('results-view').hidden = view !== 'results';
+    $('stage-label').textContent = `ACTIVITY ${view === 'personal' ? '01' : view === 'group' ? '02' : '03'} / 03`;
+    if (view === 'results') renderResults(); else renderRanking();
     if (focus) $('workspace').focus({preventScroll: true});
   }
   function updateChecks() { for (const k of ['personal', 'group']) $('check-' + k).textContent = state.confirmed[k] ? '✓' : '○'; }
-  function renderReference() {
-    $('reference-content').innerHTML = `<ol class="reference-list">${C.REFERENCE.map((id,i) => `<li><span class="reference-rank">${i+1}위</span><div><h3>${esc(C.ITEMS[id])}</h3><span class="reference-category">${esc(C.RATIONALE[id].category)}</span><p>${esc(C.RATIONALE[id].reason)}</p>${C.RATIONALE[id].detail ? `<p class="reference-detail">보충: ${esc(C.RATIONALE[id].detail)}</p>` : ''}</div></li>`).join('')}</ol>`;
+  function renderReasons() {
+    $('reference-content').innerHTML = C.REFERENCE.map((id,i) => `<details id="reason-${id}" class="reason-card"><summary><span class="reference-rank">${i+1}위</span><span><b>${esc(C.ITEMS[id])}</b><small>${esc(C.RATIONALE[id].category)}</small></span><span class="reason-toggle">이유 보기</span></summary><div class="reason-body"><p>${esc(C.RATIONALE[id].reason)}</p>${C.RATIONALE[id].detail ? `<p class="reference-detail">보충: ${esc(C.RATIONALE[id].detail)}</p>` : ''}</div></details>`).join('');
   }
   function renderRanking(focusId, focusControl = 'rank') {
     $('view-eyebrow').textContent = view === 'personal' ? 'THINK FOR YOURSELF' : 'DISCUSS & DECIDE TOGETHER';
@@ -84,17 +84,32 @@
     state.confirmed = {personal:true,group:true,reference:true};
     syncFields(); persist(); changeView('results', true); message('체험 데이터를 열었습니다. 새 활동 시작으로 실제 활동을 진행하세요.');
   }));
+  function interpretationFor(gain) {
+    if (gain > 0) return {title:'집단지성의 성공',relation:'모둠 점수 < 개인 점수 (점수가 낮아짐 = 생존율 상승)',text:"혼자 생각했을 때는 '라이터'나 '에너지 드링크' 같은 함정에 빠졌으나, 조원들과 과학적 근거를 바탕으로 토론하면서 직관적 오개념이 바로잡힌 가장 이상적인 결과입니다."};
+    if (gain < 0) return {title:'집단 동조 현상',relation:'모둠 점수 > 개인 점수 (점수가 높아짐 = 생존율 하강)',text:"개인의 올바른 과학적 생각이 모둠 내 목소리 큰 사람의 '잘못된 직관'에 설득당해 무너진 사례입니다. 단순히 다수결로 정하는 것이 아니라 '과학적 사실과 논리'에 근거해 의사결정을 내려야 하는 이유를 일깨워 줍니다."};
+    return {title:'토론의 부재 또는 확신',relation:'모둠 점수 = 개인 점수',text:'토론 과정에서 상호 영향력이 없었거나, 처음부터 조원 모두가 비슷한 수준의 직관/지식을 가지고 있었음을 의미합니다.'};
+  }
+  function discussionMarkup(p,g) {
+    if (!p || !g) return '<section class="discussion-insight"><h3>개인과 모둠의 차이는 무엇을 말해줄까요?</h3><p>개인·모둠 순위를 모두 확정하면 점수 차이와 물품별 변화를 바탕으로 해석을 보여줍니다.</p></section>';
+    const d = C.compare(state.personal,state.group), info = interpretationFor(d.gain);
+    return `<section class="discussion-insight" aria-labelledby="insight-title"><p class="insight-kicker">개인·모둠 오차 비교</p><h3 id="insight-title">${esc(info.title)}</h3><p class="insight-relation">${esc(info.relation)}</p><p>개인 <b>${p.total}점</b>에서 모둠 <b>${g.total}점</b>으로, 오차 합계가 ${d.gain > 0 ? `${d.gain}점 줄었습니다` : d.gain < 0 ? `${-d.gain}점 늘었습니다` : '같습니다'}.</p><div class="change-counts"><span>오차 감소 <b>${d.improved}개</b></span><span>오차 증가 <b>${d.worsened}개</b></span><span>같은 오차 <b>${d.equal}개</b></span></div><p class="insight-kicker">수업자료의 해석</p><blockquote>${esc(info.text)}</blockquote>${d.gain === 0 && d.changedRanks > 0 ? `<p class="equal-note">이번 활동은 합계가 같아도 순위가 바뀐 물품이 ${d.changedRanks}개입니다. 일부 물품의 개선과 악화가 서로 상쇄될 수도 있습니다.</p>` : ''}<p class="small">위 문장은 수업자료의 해석입니다. 점수 차이만으로 실제 생존 가능성이나 토론의 원인을 확정할 수 없으므로, 물품별 변화와 기록한 근거를 함께 확인하세요.</p></section>`;
+  }
   function renderResults() {
     const p = state.confirmed.personal ? C.score(state.personal) : null;
     const g = state.confirmed.group ? C.score(state.group) : null;
-    const gain = p && g ? p.total - g.total : null;
-    const status = !p || !g ? '미확정 단계가 있습니다. 해당 순위를 확정하면 고정 수업 기준으로 점수를 계산합니다.' : '오차 합계가 작을수록 PPT의 고정 수업 기준에 가깝습니다.';
-    const pr = C.ranks(state.personal), gr = C.ranks(state.group), rr = C.ranks(C.REFERENCE);
-    const metric = (value, label, featured = false) => `<article class="metric${featured ? ' featured' : ''}"><h3>${label} 오차 점수</h3><strong>${value ? value.total : '—'} <small>점 / 72</small></strong><p>${value ? `환산 ${value.normalized} / 100점` : `${label} 순위 확정 후 계산`}</p>${value ? `<span class="grade-pill">${C.band(value.total).grade} · ${C.band(value.total).label}</span>` : ''}</article>`;
-    $('results-content').innerHTML = `<div class="notice">${esc(status)} <button data-go-reference>기준 순위·근거 보기 →</button></div><div class="metrics">${metric(p,'개인')}${metric(g,'모둠',true)}<article class="metric"><h3>모둠 토론 후 개선량</h3><strong>${gain === null ? '—' : gain > 0 ? '+' + gain : gain} <small>점</small></strong><p>${gain === null ? '두 점수 계산 후 비교' : gain > 0 ? '모둠이 기준에 더 가까워졌습니다.' : gain === 0 ? '개인과 모둠의 오차 합계가 같습니다.' : '개인이 기준에 더 가까웠습니다.'}</p></article></div><p class="result-note">S~D는 자료 7쪽의 오차 구간에 따른 수업용 비교 등급입니다. 생존 확률이나 사고력의 객관적 측정값이 아닙니다.</p><p class="result-note">${esc(state.title || '과학적 의사결정 프로젝트')}${state.alias ? ' · ' + esc(state.alias) : ''}${state.groupName ? ' · ' + esc(state.groupName) : ''}<br>기준: ${esc(C.REFERENCE_LABEL)}<br>수업 조건: 11월 밤 9시 · 규모 7.0 지진 · 4층 교실 고립 · 48시간 구조 대기 가정</p>${state.activityNotes ? `<p class="result-note">활동 메모: ${esc(state.activityNotes)}</p>` : ''}<div class="table-wrap" tabindex="0" role="region" aria-label="물품별 순위 비교 표. 좁은 화면에서는 가로로 스크롤하세요."><table><caption>물품별 순위와 오차 · 미확정 값은 — 표시</caption><thead><tr><th scope="col">생존 물품</th><th scope="col">개인</th><th scope="col">모둠</th><th scope="col">고정 기준</th><th scope="col">개인 오차</th><th scope="col">모둠 오차</th></tr></thead><tbody>${C.ITEMS.map((name, id) => `<tr><th scope="row">${esc(name)}</th><td>${state.confirmed.personal ? pr[id] : '—'}</td><td>${state.confirmed.group ? gr[id] : '—'}</td><td>${rr[id]}</td><td class="error-cell">${p ? p.errors[id] : '—'}</td><td class="error-cell">${g ? g.errors[id] : '—'}</td></tr>`).join('')}</tbody></table></div><p class="result-note">오차 = |입력 순위 − 고정 기준 순위| · 합계 0~72점 · 환산 = (1 − 합계 ÷ 72) × 100<br>이 결과는 수업 기준과의 차이를 나타냅니다. <a href="#guide">계산식과 해석 보기</a></p>`;
-    $('results-content').querySelector('[data-go-reference]')?.addEventListener('click', () => changeView('reference', true));
-    $('csv-export').disabled = !p && !g;
+    const gain = p && g ? p.total-g.total : null;
+    const status = !p || !g ? '미확정 단계가 있습니다. 순위를 확정하면 고정 수업 기준으로 계산합니다.' : '오차 합계가 작을수록 PPT의 고정 수업 기준에 가깝습니다.';
+    const pr=C.ranks(state.personal), gr=C.ranks(state.group), rr=C.ranks(C.REFERENCE);
+    const metric=(value,label,featured=false)=>`<article class="metric${featured ? ' featured' : ''}"><h3>${label} 오차 점수</h3><strong>${value ? value.total : '—'} <small>점 / 72</small></strong><p>${value ? `환산 ${value.normalized} / 100점` : `${label} 순위 확정 후 계산`}</p>${value ? `<span class="grade-pill">${C.band(value.total).grade} · ${C.band(value.total).label}</span><div class="survival-metric"><span>생존 확률<small>(실제 생존 확률이랑 다를 수 있음)</small></span><b>${C.band(value.total).survival}</b></div>` : ''}</article>`;
+    $('results-content').innerHTML = `<div class="notice">${esc(status)}</div><div class="metrics">${metric(p,'개인')}${metric(g,'모둠',true)}<article class="metric"><h3>모둠 토론 후 개선량</h3><strong>${gain===null ? '—' : gain>0 ? '+'+gain : gain} <small>점</small></strong><p>개인 오차 − 모둠 오차<br>양수이면 모둠이 기준에 더 가깝습니다.</p></article></div><p class="result-note">생존 확률(실제 생존 확률이랑 다를 수 있음)은 자료 7쪽의 등급별 수치를 흥미 요소로 연결한 표시이며, 검증된 재난 예측값이 아닙니다. 같은 등급 안에서는 오차가 줄어도 확률 표시는 같습니다.</p>${discussionMarkup(p,g)}<p class="result-note">${esc(state.title || '과학적 의사결정 프로젝트')}${state.alias ? ' · '+esc(state.alias) : ''}${state.groupName ? ' · '+esc(state.groupName) : ''}<br>기준: ${esc(C.REFERENCE_LABEL)}</p>${state.activityNotes ? `<p class="result-note">활동 메모: ${esc(state.activityNotes)}</p>` : ''}<div class="table-wrap" tabindex="0" role="region" aria-label="물품별 순위와 오차 변화 표. 좁은 화면에서는 가로로 스크롤하세요."><table><caption>물품별 순위와 오차 변화 · 이유 보기를 누르면 해당 설명을 엽니다</caption><thead><tr><th scope="col">생존 물품</th><th scope="col">개인</th><th scope="col">모둠</th><th scope="col">기준</th><th scope="col">개인 오차</th><th scope="col">모둠 오차</th><th scope="col">오차 감소량</th></tr></thead><tbody>${C.ITEMS.map((name,id)=>{const delta=p&&g ? p.errors[id]-g.errors[id] : null; return `<tr><th scope="row">${esc(name)}<a class="reason-link" href="#reason-${id}" data-reason="${id}">이유 보기</a></th><td>${state.confirmed.personal ? pr[id] : '—'}</td><td>${state.confirmed.group ? gr[id] : '—'}</td><td>${rr[id]}</td><td class="error-cell">${p ? p.errors[id] : '—'}</td><td class="error-cell">${g ? g.errors[id] : '—'}</td><td class="${delta>0 ? 'delta-positive' : delta<0 ? 'delta-negative' : ''}">${delta===null ? '—' : delta>0 ? '+'+delta : delta}</td></tr>`;}).join('')}</tbody></table></div><p class="result-note">물품별 오차 감소량 = 개인 오차 − 모둠 오차. 양수는 개선, 음수는 오차 증가를 뜻합니다.<br>오차 = |입력 순위 − 고정 기준 순위| · 합계 0~72점 · 환산 = (1 − 합계 ÷ 72) × 100 · <a href="#guide">계산식과 해석 보기</a></p>`;
+    $('results-content').querySelectorAll('[data-reason]').forEach(link=>link.addEventListener('click',e=>{
+      e.preventDefault(); const detail=$('reason-'+link.dataset.reason); detail.open=true;
+      detail.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',block:'center'});
+      detail.querySelector('summary').focus({preventScroll:true});
+    }));
+    $('csv-export').disabled=!p&&!g;
   }
+
   $('persist').addEventListener('change', () => {
     if ($('persist').checked) persist(); else if(removeStored()) $('save-status').textContent = '저장본 삭제됨 · 현재 탭의 입력만 유지됩니다.';
   });
@@ -115,7 +130,9 @@
     const g = state.confirmed.group ? C.score(state.group) : null;
     if (!p && !g) return;
     const pr = C.ranks(state.personal), gr = C.ranks(state.group), rr = C.ranks(C.REFERENCE);
-    const rows = [['활동',state.title],['별칭',state.alias],['모둠',state.groupName],['수업 시나리오',C.SCENARIO],['활동 메모',state.activityNotes],['고정 기준',C.REFERENCE_LABEL],['체험 데이터',state.demo ? '예 · 개인·모둠 순위만 체험 값' : '아니오'],[],['물품','개인 순위','모둠 순위','고정 기준 순위','개인 오차','모둠 오차','개인 근거','모둠 근거'], ...C.ITEMS.map((name,id) => [name,p ? pr[id] : '',g ? gr[id] : '',rr[id],p?.errors[id] ?? '',g?.errors[id] ?? '',state.notes.personal[id],state.notes.group[id]]),['오차 합계','','','',p?.total ?? '',g?.total ?? ''],['환산 점수 (100점)','','','',p?.normalized ?? '',g?.normalized ?? ''],['수업용 비교 등급','','','',p ? C.band(p.total).grade : '',g ? C.band(g.total).grade : ''],['등급 해석','생존 확률이나 사고력의 객관적 측정값이 아님'],['모둠 개선량',p && g ? p.total-g.total : ''],['활동 후기',state.reflection]];
+    const rows = [['활동',state.title],['별칭',state.alias],['모둠',state.groupName],['수업 시나리오',C.SCENARIO],['활동 메모',state.activityNotes],['고정 기준',C.REFERENCE_LABEL],['체험 데이터',state.demo ? '예 · 개인·모둠 순위만 체험 값' : '아니오'],[],['물품','개인 순위','모둠 순위','고정 기준 순위','개인 오차','모둠 오차','개인 근거','모둠 근거','오차 감소량','기준 순위 이유'], ...C.ITEMS.map((name,id) => [name,p ? pr[id] : '',g ? gr[id] : '',rr[id],p?.errors[id] ?? '',g?.errors[id] ?? '',state.notes.personal[id],state.notes.group[id],p&&g ? p.errors[id]-g.errors[id] : '',C.RATIONALE[id].reason]),['오차 합계','','','',p?.total ?? '',g?.total ?? ''],['환산 점수 (100점)','','','',p?.normalized ?? '',g?.normalized ?? ''],['수업용 비교 등급','','','',p ? C.band(p.total).grade : '',g ? C.band(g.total).grade : ''],['등급 해석','생존 확률이나 사고력의 객관적 측정값이 아님'],['모둠 개선량',p && g ? p.total-g.total : ''],['활동 후기',state.reflection]];
+    rows.push(['개인 생존 확률(실제 생존 확률이랑 다를 수 있음)',p ? C.band(p.total).survival : ''],['모둠 생존 확률(실제 생존 확률이랑 다를 수 있음)',g ? C.band(g.total).survival : ''],['확률 안내','자료 7쪽의 등급별 수치를 흥미 요소로 연결한 표시이며 검증된 재난 예측값이 아님']);
+    if(p&&g) { const info=interpretationFor(p.total-g.total); rows.push(['수업자료의 결과 해석',info.title],['해석 본문',info.text],['해석 안내','점수 차이만으로 실제 토론의 원인을 확정할 수 없음']); }
     download('의사결정_비교결과.csv','\ufeff'+rows.map(r=>r.map(C.csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8'); message('비교 결과를 CSV로 내려받았습니다.');
   });
   window.addEventListener('beforeprint', renderResults);
@@ -123,5 +140,9 @@
   try { const saved = localStorage.getItem(KEY); if (saved) { const data = JSON.parse(saved); state = C.validate(data); $('persist').checked = true; $('save-status').textContent = '저장된 활동 복원됨 · PPT의 고정 수업 기준 적용'; if (data.version === 1) message('이전 활동의 순위와 근거를 복원했습니다. 기준·시나리오는 PPT 자료로 고정하고, 이전 상황 기록은 활동 메모로 보존했습니다.');} }
   catch { message('저장된 활동을 복원하지 못했습니다. 필요한 경우 활동 파일을 열어주세요.'); }
   $('scenario-text').textContent = C.SCENARIO;
+  const scenarioMedia=window.matchMedia('(min-width:1180px)');
+  $('scenario-details').open=scenarioMedia.matches;
+  scenarioMedia.addEventListener('change',e=>$('scenario-details').open=e.matches);
+  renderReasons();
   syncFields(); changeView('personal');
 })();
