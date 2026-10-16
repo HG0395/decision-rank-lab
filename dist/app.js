@@ -17,6 +17,7 @@
   }
   function changeView(next, focus = false) {
     view = next;
+    updateChecks();
     document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.view === view)));
     $('ranking-layout').hidden = view === 'results'; $('results-view').hidden = view !== 'results';
     $('stage-label').textContent = `ACTIVITY ${view === 'personal' ? '01' : view === 'group' ? '02' : '03'} / 03`;
