@@ -24,15 +24,60 @@ test('invalid, duplicate and incomplete rankings cannot be scored or imported', 
     assert.throws(()=>C.validate({...C.fresh(),personal:invalid}));
   }
   assert.throws(()=>C.validate({...C.fresh(),notes:{personal:[],group:[]}}));
-  assert.throws(()=>C.validate({...C.fresh(),version:2}));
+  assert.throws(()=>C.validate({...C.fresh(),version:3}));
 });
 test('file validation preserves only schema fields and copies arrays', () => {
   const original=C.fresh(); original.extra='ignored'; const restored=C.validate(original);
   assert.equal(restored.extra,undefined); assert.notEqual(original.personal,restored.personal);
-  assert.deepEqual(restored,C.fresh());
+  const {extra,...expected}=original;
+  assert.deepEqual(restored,expected);
 });
 test('CSV handles quotes, newlines and spreadsheet formulas safely', () => {
   assert.equal(C.csvCell('a"b\nc'),'"a""b\nc"');
   assert.equal(C.csvCell('=1+1'),'"\'=1+1"');
   assert.equal(C.csvCell('  @SUM(A1)'),'"\'  @SUM(A1)"');
+});
+
+test('PPT slide 9 reference is fixed and fresh activities can be scored immediately', () => {
+  assert.deepEqual(C.REFERENCE,[0,1,2,3,4,5,6,7,8,9,10,11]);
+  assert.ok(Object.isFrozen(C.REFERENCE));
+  assert.equal(C.RATIONALE.length,12);
+  const data=C.fresh(); data.reference.reverse();
+  assert.deepEqual(C.REFERENCE,C.identity());
+  assert.equal(data.confirmed.reference,true);
+  assert.equal(C.score(C.identity()).total,0);
+});
+
+test('starting and reset orders remain valid without revealing the reference', () => {
+  for (const random of [()=>0,()=>0.999999,Math.random]) {
+    for(let i=0;i<30;i++) {
+      const order=C.shuffled(random);
+      assert.ok(C.validOrder(order)); assert.notDeepEqual(order,C.REFERENCE);
+    }
+  }
+});
+
+test('legacy files preserve student work and move old scenarios to activity notes', () => {
+  const legacy={...C.fresh(),version:1,scenario:'이전 수업 메모',reference:C.identity().reverse(),referenceLabel:'이전 임의 기준'};
+  legacy.alias='참여자'; legacy.notes.personal[0]='보존할 근거'; legacy.confirmed.reference=false;
+  const restored=C.validate(legacy);
+  assert.equal(restored.version,2); assert.equal(restored.activityNotes,'이전 수업 메모');
+  assert.equal(restored.alias,'참여자'); assert.equal(restored.notes.personal[0],'보존할 근거');
+  assert.deepEqual(restored.personal,legacy.personal); assert.deepEqual(restored.reference,C.REFERENCE);
+  assert.equal(restored.scenario,C.SCENARIO); assert.equal(restored.referenceLabel,C.REFERENCE_LABEL);
+  assert.equal(restored.confirmed.reference,true);
+});
+
+test('imported files cannot override the fixed reference or scenario', () => {
+  const file=C.fresh(); file.personal=C.move(C.identity(),0,1); file.confirmed.personal=true;
+  file.reference=file.personal; file.referenceLabel='변조 기준'; file.confirmed.reference=false; file.scenario='변조 상황';
+  const restored=C.validate(file);
+  assert.deepEqual(restored.reference,C.REFERENCE); assert.equal(restored.scenario,C.SCENARIO);
+  assert.equal(restored.referenceLabel,C.REFERENCE_LABEL); assert.equal(restored.confirmed.reference,true);
+  assert.equal(C.score(restored.personal).total,2);
+});
+
+test('classroom bands follow PPT slide 7 and reject impossible odd totals', () => {
+  for (const [total,grade] of [[0,'S'],[12,'S'],[14,'A'],[26,'A'],[28,'B'],[42,'B'],[44,'C'],[56,'C'],[58,'D'],[72,'D']]) assert.equal(C.band(total).grade,grade);
+  for(const total of [-2,13,73,NaN]) assert.throws(()=>C.band(total));
 });
